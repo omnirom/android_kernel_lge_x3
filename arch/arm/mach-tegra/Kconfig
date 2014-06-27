@@ -472,6 +472,13 @@ config TEGRA_CONVSERVATIVE_GOV_ON_EARLYSUPSEND
 	help
 	 Also will restore to original cpu frequency governor when device is resumed
 
+config TEGRA_RUNNABLE_THREAD
+	bool "Tegra3 runnable thread hotplug"
+	depends on ARCH_TEGRA_3x_SOC
+	default n
+	help
+	  Tegra3 Runnable Thread calculations for CPU hotplug
+
 config TEGRA_STAT_MON
         bool "Enable H/W statistics monitor"
         depends on ARCH_TEGRA_2x_SOC
@@ -600,6 +607,15 @@ config TEGRA_LP1_950
 	depends on ARCH_TEGRA_3x_SOC
 	help
 		Enable support for LP1 Core voltage to set to lowest
+
+config GROUPER_HARDBOOT_RECOVERY
+	bool "Reboot to recovery partition when using Kexec-hardboot"
+	depends on MACH_GROUPER
+	depends on KEXEC_HARDBOOT
+	default n
+	help
+	  Reboot with the recovery kernel since the boot kernel decompressor may
+	  not support the hardboot jump.
 endif
 
 config TEGRA_DC_USE_HW_BPP

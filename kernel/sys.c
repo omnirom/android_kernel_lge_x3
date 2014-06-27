@@ -131,6 +131,10 @@ EXPORT_SYMBOL(cad_pid);
 
 void (*pm_power_off_prepare)(void);
 
+#ifndef CONFIG_CPUQUIET_FRAMEWORK
+extern void disable_auto_hotplug(void);
+#endif
+
 /*
  * Returns true if current's euid is same as p's uid or euid,
  * or has CAP_SYS_NICE to p's user_ns.
@@ -372,23 +376,23 @@ EXPORT_SYMBOL(unregister_reboot_notifier);
  */
 void kernel_restart(char *cmd)
 {
-//                               
-#if defined(CONFIG_MFD_MAX77663_FOR_USED_SCRATCH_REGISTER)
-		max77663_set_ScratchRegister(MAX77663_SCRATCH_REG_RESET);
-#else
-		unsigned char bootcause[1] = {LGE_NVDATA_RESET_CAUSE_VAL_USER_RESET};
-		lge_nvdata_write(LGE_NVDATA_RESET_CAUSE_OFFSET, bootcause,1);
+#ifndef CONFIG_CPUQUIET_FRAMEWORK
+        disable_auto_hotplug();
 #endif
-//                               
 
-//             
+#if defined(CONFIG_MFD_MAX77663_FOR_USED_SCRATCH_REGISTER)
+	max77663_set_ScratchRegister(MAX77663_SCRATCH_REG_RESET);
+#else
+	unsigned char bootcause[1] = {LGE_NVDATA_RESET_CAUSE_VAL_USER_RESET};
+	lge_nvdata_write(LGE_NVDATA_RESET_CAUSE_OFFSET, bootcause,1);
+#endif
+
 #if defined(CONFIG_MACH_X3)  || defined(CONFIG_MACH_LX) || defined(CONFIG_MACH_VU10)
 #if 1
 	blocking_notifier_call_chain(&reboot_notifier_list, SYS_RESTART, cmd);
 	max77663_power_rst_wkup(1);
 #else
-	if(is_tegra_bootmode()==0)  //power-off  charging
-	{
+	if (is_tegra_bootmode() == 0) { //power-off  charging
 		disable_nonboot_cpus();
 		
 		kernel_restart_prepare(cmd);
@@ -399,15 +403,13 @@ void kernel_restart(char *cmd)
 		kmsg_dump(KMSG_DUMP_RESTART);
 		machine_restart(cmd);
 	}
-	else
-	{
+	else {
 		blocking_notifier_call_chain(&reboot_notifier_list, SYS_RESTART, cmd);
 		max77663_power_rst_wkup(1);	
 		
 		printk(KERN_EMERG "Enable wkup for power cycle test.\n");
 	}
 #endif
-//             
 #else
 	kernel_restart_prepare(cmd);
 	if (!cmd)
@@ -435,12 +437,10 @@ static void kernel_shutdown_prepare(enum system_states state)
  */
 void kernel_halt(void)
 {
-//                    
 #if defined(CONFIG_MACH_X3)
 	blocking_notifier_call_chain(&reboot_notifier_list,SYS_POWER_OFF, NULL);
 	max77663_power_off();
 #else
-
 	kernel_shutdown_prepare(SYSTEM_HALT);
 	syscore_shutdown();
 	printk(KERN_EMERG "System halted.\n");
@@ -458,7 +458,10 @@ EXPORT_SYMBOL_GPL(kernel_halt);
  */
 void kernel_power_off(void)
 {
-//                    
+#ifndef CONFIG_CPUQUIET_FRAMEWORK
+        disable_auto_hotplug();
+#endif
+
 #if defined(CONFIG_MACH_X3)
 	kernel_halt();
 #else
